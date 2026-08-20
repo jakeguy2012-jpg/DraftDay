@@ -25,4 +25,13 @@ Without provider credentials the application runs in clearly labeled demo mode. 
 - `prisma/`: normalized PostgreSQL schema with immutable historical snapshots.
 - `tests/`: deterministic quantitative-model tests.
 
+## League intelligence phase
+
+- My Leagues uses the normalized `DraftPlatformProvider` boundary for Sleeper, Yahoo, ESPN, and manual leagues.
+- Sleeper imports league scoring, managers, rosters, drafts, keeper picks, and previous-league history through its official public API.
+- Stable provider identities power opponent tendencies; limited samples are shrunk toward league behavior before simulation use.
+- Manual and synced drafts share a deterministic session domain with pick, edit, undo, pause, availability removal, and recommendation recalculation.
+- Yahoo uses server-side OAuth scaffolding. ESPN is explicitly unofficial and accepts only a validated bridge envelope or manual input.
+- SportsGameOdds is the optional initial development odds adapter. The vendor-neutral provider boundary reports missing season-long markets as unavailable and never substitutes weekly props or invented coverage.
+
 Provider credentials remain server-side. Production deployments should place ingestion on a scheduler, connect authenticated user sessions, and replace demo adapters through the existing provider interfaces.

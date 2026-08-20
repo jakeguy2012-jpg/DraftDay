@@ -1,0 +1,5 @@
+import type { DraftPlatformProvider, NormalizedDraft, NormalizedDraftPick, NormalizedLeagueProfile, NormalizedManager } from "@/providers";
+export interface EspnBridgeEnvelope {version:1;league:NormalizedLeagueProfile;capturedAt:string;nonce:string}
+export function validateBridgeEnvelope(value:unknown):value is EspnBridgeEnvelope {if(!value||typeof value!=="object")return false;const v=value as Partial<EspnBridgeEnvelope>;return v.version===1&&typeof v.capturedAt==="string"&&typeof v.nonce==="string"&&Boolean(v.league)&&v.league?.provider==="ESPN";}
+const bridgeRequired=async():Promise<never>=>{throw new Error("ESPN is unofficial and requires a trusted browser/session bridge; use manual draft mode until connected")};
+export const espnProvider:DraftPlatformProvider={name:"ESPN (unofficial)",user:bridgeRequired as (x:string)=>Promise<NormalizedManager>,leagues:bridgeRequired as (x:string,y:number)=>Promise<NormalizedLeagueProfile[]>,league:bridgeRequired as (x:string)=>Promise<NormalizedLeagueProfile>,draft:bridgeRequired as (x:string)=>Promise<NormalizedDraft>,picks:bridgeRequired as (x:string)=>Promise<NormalizedDraftPick[]>};
