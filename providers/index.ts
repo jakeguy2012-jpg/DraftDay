@@ -5,8 +5,10 @@ export interface FantasyDataProvider { name:string; players(ctx:ProviderContext)
 export interface ADPProvider { name:string; adp(ctx:ProviderContext):Promise<Array<{sourceId:string;mean:number;sd:number;sampleSize?:number}>> }
 export interface ProjectionProvider { name:string; projections(ctx:ProviderContext):Promise<Array<{sourceId:string;stats:StatLine}>> }
 export interface InjuryProvider { name:string; injuries(ctx:ProviderContext):Promise<Array<{sourceId:string;status:string;detail?:string}>> }
-export interface OddsLine { sourceId:string; book:string; stat:keyof StatLine; line:number; overPrice:number; underPrice:number; marketType:"SEASON"|"WEEKLY"|"FUTURE"; observedAt:Date }
-export interface OddsProvider { name:string; lines(ctx:ProviderContext):Promise<OddsLine[]> }
+export type OddsMarketType="SEASON"|"WEEKLY"|"FUTURE";
+export interface OddsLine { sourceId:string; providerId?:string; book:string; stat:keyof StatLine; line:number; overPrice:number; underPrice:number; marketType:OddsMarketType; observedAt:Date }
+export interface OddsMarketAvailability { provider:string; market:string; marketType:OddsMarketType|"UNAVAILABLE"; sportsbook?:string; available:boolean; reason?:string; observedAt:Date }
+export interface OddsProvider { name:string; lines(ctx:ProviderContext):Promise<OddsLine[]>; coverage?(ctx:ProviderContext):Promise<OddsMarketAvailability[]> }
 export type DraftProvider = "SLEEPER"|"YAHOO"|"ESPN"|"MANUAL";
 export interface NormalizedManager { externalId:string; displayName:string; avatarUrl?:string; isUser?:boolean }
 export interface NormalizedTeam { externalId:string; name:string; managerExternalId:string; rosterPlayerIds:string[]; wins?:number; losses?:number }

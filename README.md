@@ -32,6 +32,6 @@ Without provider credentials the application runs in clearly labeled demo mode. 
 - Stable provider identities power opponent tendencies; limited samples are shrunk toward league behavior before simulation use.
 - Manual and synced drafts share a deterministic session domain with pick, edit, undo, pause, availability removal, and recommendation recalculation.
 - Yahoo uses server-side OAuth scaffolding. ESPN is explicitly unofficial and accepts only a validated bridge envelope or manual input.
-- OpticOdds is optional and refuses to show invented coverage when credentials or season-long markets are unavailable.
+- SportsGameOdds is the optional initial development odds adapter. The vendor-neutral provider boundary reports missing season-long markets as unavailable and never substitutes weekly props or invented coverage.
 
 Provider credentials remain server-side. Production deployments should place ingestion on a scheduler, connect authenticated user sessions, and replace demo adapters through the existing provider interfaces.
