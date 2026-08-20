@@ -1,0 +1,1 @@
+import {NextResponse} from "next/server";import {demoPlayers} from "@/lib/demo";export async function GET(){return NextResponse.json({data:[...demoPlayers].sort((a,b)=>b.draftIq-a.draftIq),meta:{demo:true,updatedAt:new Date().toISOString()}})}
