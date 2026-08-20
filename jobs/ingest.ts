@@ -1,0 +1,4 @@
+import type {ADPProvider,OddsProvider,ProjectionProvider,ProviderContext} from "@/providers";
+const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
+export async function withRetry<T>(operation:()=>Promise<T>,attempts=4){let error:unknown;for(let attempt=0;attempt<attempts;attempt++){try{return await operation()}catch(e){error=e;if(attempt<attempts-1)await sleep(250*2**attempt)}}throw error}
+export async function ingest(ctx:ProviderContext,providers:{adp?:ADPProvider;odds?:OddsProvider;projections?:ProjectionProvider}){const [adp,odds,projections]=await Promise.all([providers.adp?withRetry(()=>providers.adp!.adp(ctx)):[],providers.odds?withRetry(()=>providers.odds!.lines(ctx)):[],providers.projections?withRetry(()=>providers.projections!.projections(ctx)):[]]);return {adp,odds,projections,capturedAt:new Date()}}
