@@ -1,0 +1,3 @@
+import type { Position, ScoringRules, StatLine } from "@/lib/types";
+export function fantasyPoints(stats:StatLine,rules:ScoringRules,position?:Position){return (stats.passingYards??0)*rules.passingYard+(stats.passingTouchdowns??0)*rules.passingTouchdown+(stats.interceptions??0)*rules.interception+(stats.rushingYards??0)*rules.rushingYard+(stats.rushingTouchdowns??0)*rules.rushingTouchdown+(stats.receptions??0)*(rules.reception+(position==="TE"?rules.tePremium:0))+(stats.receivingYards??0)*rules.receivingYard+(stats.receivingTouchdowns??0)*rules.receivingTouchdown+(stats.firstDowns??0)*rules.firstDown}
+export function valueOverReplacement(points:number,replacement:number){return points-replacement}

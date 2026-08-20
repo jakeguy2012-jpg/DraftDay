@@ -1,0 +1,1 @@
+export default function Page(){return <><h1>Player mapping issues</h1><p>Ambiguous identities require explicit review and are never silently resolved.</p><section className="panel empty">No unresolved demo identities. Direct provider IDs are mapped first, followed by normalized name, team, and position.</section></>}

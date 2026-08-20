@@ -1,0 +1,1 @@
+import {NextResponse} from "next/server";import {demoPlayers} from "@/lib/demo";import {vegasEdge} from "@/services/draftiq";export async function GET(){return NextResponse.json({data:demoPlayers.map(p=>({...p,vegasEdge:vegasEdge(p.marketAdp,p.vegasAdp)})).sort((a,b)=>b.vegasEdge-a.vegasEdge),meta:{demo:true,updatedAt:new Date().toISOString()}})}
