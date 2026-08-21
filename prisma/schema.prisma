@@ -1,38 +1,530 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("STORAGE_URL") }
-enum Position { QB RB WR TE K DST }
-enum DraftType { SNAKE LINEAR }
-enum MarketType { SEASON WEEKLY FUTURE TEAM }
-enum MappingStatus { RESOLVED AMBIGUOUS UNRESOLVED }
-model User { id String @id @default(cuid()) email String @unique name String? leagues League[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
-model League { id String @id @default(cuid()) userId String? user User? @relation(fields:[userId],references:[id],onDelete:SetNull) provider String @default("MANUAL") externalId String? season Int @default(2026) previousLeagueId String? name String settings LeagueSettings? drafts Draft[] members LeagueMember[] syncs LeagueSync[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt @@unique([provider,externalId,season]) }
-model LeagueSettings { id String @id @default(cuid()) leagueId String @unique league League @relation(fields:[leagueId],references:[id],onDelete:Cascade) teams Int draftType DraftType draftSlot Int scoring Json roster Json keepers Json? modelWeights Json createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
-model Draft { id String @id @default(cuid()) leagueId String league League @relation(fields:[leagueId],references:[id],onDelete:Cascade) platform String externalId String? status String @default("PAUSED") currentPick Int @default(1) userSlot Int? rounds Int @default(16) lastSyncedAt DateTime? syncError String? teams DraftTeam[] picks DraftPick[] simulations SimulationRun[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt @@index([leagueId,status]) @@unique([platform,externalId]) }
-model DraftTeam { id String @id @default(cuid()) draftId String draft Draft @relation(fields:[draftId],references:[id],onDelete:Cascade) name String slot Int rosters Roster[] @@unique([draftId,slot]) }
-model DraftPick { id String @id @default(cuid()) draftId String draft Draft @relation(fields:[draftId],references:[id],onDelete:Cascade) teamId String? playerId String player Player @relation(fields:[playerId],references:[id]) externalId String? pick Int round Int slot Int? isKeeper Boolean @default(false) source String @default("MANUAL") selectedAt DateTime @default(now()) @@unique([draftId,pick]) @@unique([draftId,externalId]) @@index([draftId,playerId]) }
-model Roster { id String @id @default(cuid()) teamId String team DraftTeam @relation(fields:[teamId],references:[id],onDelete:Cascade) playerId String player Player @relation(fields:[playerId],references:[id]) slot String isStarter Boolean @default(false) @@unique([teamId,playerId]) }
-model Player { id String @id @default(cuid()) name String normalizedName String firstName String lastName String team String position Position fantasyPositions Json? byeWeek Int? active Boolean @default(true) injuryStatus String? metadataSyncedAt DateTime? externalIds PlayerExternalId[] projections PlayerProjection[] adp ADPSnapshot[] rankings RankingSnapshot[] injuries Injury[] markets PlayerMarket[] vegasProjections VegasProjection[] vegasScores VegasPlayerScore[] confidenceScores VegasConfidenceScore[] draftIqScores DraftIQScore[] tiers PositionTier[] availability AvailabilityEstimate[] picks DraftPick[] rosters Roster[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt @@index([normalizedName,team,position]) }
-model PlayerExternalId { id String @id @default(cuid()) playerId String? player Player? @relation(fields:[playerId],references:[id],onDelete:Cascade) providerId String provider DataProvider @relation(fields:[providerId],references:[id]) externalId String sourceName String? status MappingStatus confidence Float? candidates Json? createdAt DateTime @default(now()) @@unique([providerId,externalId]) @@index([status]) }
-model ProjectionSnapshot { id String @id @default(cuid()) providerId String provider DataProvider @relation(fields:[providerId],references:[id]) season Int scoring String capturedAt DateTime @default(now()) projections PlayerProjection[] @@index([season,scoring,capturedAt]) }
-model PlayerProjection { id String @id @default(cuid()) snapshotId String snapshot ProjectionSnapshot @relation(fields:[snapshotId],references:[id],onDelete:Cascade) playerId String player Player @relation(fields:[playerId],references:[id]) stats Json fantasyPoints Float floor Float? ceiling Float? @@unique([snapshotId,playerId]) }
-model ADPSnapshot { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) providerId String provider DataProvider @relation(fields:[providerId],references:[id]) sourceId String? scoring String leagueType String leagueSize Int? season Int? mean Float deviation Float sampleSize Int? capturedAt DateTime @default(now()) @@index([playerId,scoring,capturedAt]) @@index([providerId,season,leagueSize,capturedAt]) }
-model RankingSnapshot { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) providerId String provider DataProvider @relation(fields:[providerId],references:[id]) scoring String rank Int positionRank Int capturedAt DateTime @default(now()) @@index([playerId,capturedAt]) }
-model Injury { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) providerId String provider DataProvider @relation(fields:[providerId],references:[id]) status String detail String? capturedAt DateTime @default(now()) @@index([playerId,capturedAt]) }
-model OddsEvent { id String @id @default(cuid()) providerId String provider DataProvider @relation(fields:[providerId],references:[id]) externalId String name String startsAt DateTime? markets PlayerMarket[] createdAt DateTime @default(now()) @@unique([providerId,externalId]) }
-model PlayerMarket { id String @id @default(cuid()) eventId String event OddsEvent @relation(fields:[eventId],references:[id],onDelete:Cascade) playerId String player Player @relation(fields:[playerId],references:[id]) stat String marketType MarketType lines SportsbookLine[] consensus MarketConsensus[] @@index([playerId,stat,marketType]) }
-model SportsbookLine { id String @id @default(cuid()) marketId String market PlayerMarket @relation(fields:[marketId],references:[id],onDelete:Cascade) sportsbook String line Float overPrice Int underPrice Int source String capturedAt DateTime @default(now()) @@index([marketId,capturedAt]) }
-model MarketConsensus { id String @id @default(cuid()) marketId String market PlayerMarket @relation(fields:[marketId],references:[id],onDelete:Cascade) mean Float median Float weighted Float dispersion Float bookCount Int outlierCount Int confidence Float lineMovement Float? capturedAt DateTime @default(now()) @@index([marketId,capturedAt]) }
-model VegasProjection { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) scoring String stats Json fantasyPoints Float capturedAt DateTime @default(now()) @@index([playerId,scoring,capturedAt]) }
-model VegasPlayerScore { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) scoring String score Float components Json capturedAt DateTime @default(now()) @@index([playerId,scoring,capturedAt]) }
-model VegasConfidenceScore { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) score Float breadth Float agreement Float freshness Float keyMarkets Float pricing Float capturedAt DateTime @default(now()) @@index([playerId,capturedAt]) }
-model DraftIQScore { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) scoring String overall Float vegasScore Float projectionScore Float vorpScore Float scarcityScore Float rosterFitScore Float injuryScore Float vegasConfidence Float vegasAdp Float marketAdp Float vegasEdge Float components Json capturedAt DateTime @default(now()) @@index([scoring,overall,capturedAt]) }
-model PositionTier { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) scoring String tier Int value Float capturedAt DateTime @default(now()) @@index([scoring,tier,capturedAt]) }
-model AvailabilityEstimate { id String @id @default(cuid()) playerId String player Player @relation(fields:[playerId],references:[id]) draftId String? currentPick Int targetPick Int probability Float modelVersion String inputs Json capturedAt DateTime @default(now()) @@index([draftId,currentPick]) }
-model SimulationRun { id String @id @default(cuid()) draftId String? draft Draft? @relation(fields:[draftId],references:[id],onDelete:SetNull) iterations Int depth Int settings Json status String results SimulationResult[] createdAt DateTime @default(now()) completedAt DateTime? }
-model SimulationResult { id String @id @default(cuid()) runId String run SimulationRun @relation(fields:[runId],references:[id],onDelete:Cascade) candidateId String survivalRate Float expectedStarterPoints Float expectedVorp Float expectedVegasEdge Float composition Json @@unique([runId,candidateId]) }
-model DataProvider { id String @id @default(cuid()) name String category String enabled Boolean @default(true) configuration Json? externalIds PlayerExternalId[] projectionSnapshots ProjectionSnapshot[] adpSnapshots ADPSnapshot[] rankings RankingSnapshot[] injuries Injury[] oddsEvents OddsEvent[] ingestionRuns DataIngestionRun[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt @@unique([name,category]) }
-model DataIngestionRun { id String @id @default(cuid()) providerId String provider DataProvider @relation(fields:[providerId],references:[id]) status String calls Int @default(0) records Int @default(0) failures Int @default(0) quotaRemaining Int? quotaResetAt DateTime? error String? startedAt DateTime @default(now()) completedAt DateTime? @@index([providerId,startedAt]) }
-model Manager { id String @id @default(cuid()) provider String externalId String displayName String avatarUrl String? memberships LeagueMember[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt @@unique([provider,externalId]) }
-model LeagueMember { id String @id @default(cuid()) leagueId String league League @relation(fields:[leagueId],references:[id],onDelete:Cascade) managerId String manager Manager @relation(fields:[managerId],references:[id],onDelete:Cascade) externalTeamId String teamName String draftSlot Int? isUser Boolean @default(false) tendency Json? sampleSize Int @default(0) confidence Float @default(0) createdAt DateTime @default(now()) updatedAt DateTime @updatedAt @@unique([leagueId,managerId]) @@index([managerId]) }
-model LeagueSync { id String @id @default(cuid()) leagueId String league League @relation(fields:[leagueId],references:[id],onDelete:Cascade) provider String status String records Int @default(0) error String? startedAt DateTime @default(now()) completedAt DateTime? @@index([leagueId,startedAt]) }
-model AppPreference { id String @id @default("default") activeLeagueId String? updatedAt DateTime @updatedAt @@index([activeLeagueId]) }
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("STORAGE_URL")
+}
+
+enum Position {
+  QB
+  RB
+  WR
+  TE
+  K
+  DST
+}
+
+enum DraftType {
+  SNAKE
+  LINEAR
+}
+
+enum MarketType {
+  SEASON
+  WEEKLY
+  FUTURE
+  TEAM
+}
+
+enum MappingStatus {
+  RESOLVED
+  AMBIGUOUS
+  UNRESOLVED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  leagues   League[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model League {
+  id               String          @id @default(cuid())
+  userId           String?
+  user             User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  provider         String          @default("MANUAL")
+  externalId       String?
+  season           Int             @default(2026)
+  previousLeagueId String?
+  name             String
+  settings         LeagueSettings?
+  drafts           Draft[]
+  members          LeagueMember[]
+  syncs            LeagueSync[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([provider, externalId, season])
+}
+
+model LeagueSettings {
+  id           String    @id @default(cuid())
+  leagueId     String    @unique
+  league       League    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  teams        Int
+  draftType    DraftType
+  draftSlot    Int
+  scoring      Json
+  roster       Json
+  keepers      Json?
+  modelWeights Json
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Draft {
+  id           String          @id @default(cuid())
+  leagueId     String
+  league       League          @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  platform     String
+  externalId   String?
+  status       String          @default("PAUSED")
+  currentPick  Int             @default(1)
+  userSlot     Int?
+  rounds       Int             @default(16)
+  lastSyncedAt DateTime?
+  syncError    String?
+  teams        DraftTeam[]
+  picks        DraftPick[]
+  simulations  SimulationRun[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([platform, externalId])
+  @@index([leagueId, status])
+}
+
+model DraftTeam {
+  id      String   @id @default(cuid())
+  draftId String
+  draft   Draft    @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  name    String
+  slot    Int
+  rosters Roster[]
+
+  @@unique([draftId, slot])
+}
+
+model DraftPick {
+  id         String   @id @default(cuid())
+  draftId    String
+  draft      Draft    @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  teamId     String?
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id])
+  externalId String?
+  pick       Int
+  round      Int
+  slot       Int?
+  isKeeper   Boolean  @default(false)
+  source     String   @default("MANUAL")
+  selectedAt DateTime @default(now())
+
+  @@unique([draftId, pick])
+  @@unique([draftId, externalId])
+  @@index([draftId, playerId])
+}
+
+model Roster {
+  id        String    @id @default(cuid())
+  teamId    String
+  team      DraftTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerId  String
+  player    Player    @relation(fields: [playerId], references: [id])
+  slot      String
+  isStarter Boolean   @default(false)
+
+  @@unique([teamId, playerId])
+}
+
+model Player {
+  id               String                 @id @default(cuid())
+  name             String
+  normalizedName   String
+  firstName        String
+  lastName         String
+  team             String
+  position         Position
+  fantasyPositions Json?
+  byeWeek          Int?
+  active           Boolean                @default(true)
+  injuryStatus     String?
+  metadataSyncedAt DateTime?
+  externalIds      PlayerExternalId[]
+  projections      PlayerProjection[]
+  adp              ADPSnapshot[]
+  rankings         RankingSnapshot[]
+  injuries         Injury[]
+  markets          PlayerMarket[]
+  vegasProjections VegasProjection[]
+  vegasScores      VegasPlayerScore[]
+  confidenceScores VegasConfidenceScore[]
+  draftIqScores    DraftIQScore[]
+  tiers            PositionTier[]
+  availability     AvailabilityEstimate[]
+  picks            DraftPick[]
+  rosters          Roster[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([normalizedName, team, position])
+}
+
+model PlayerExternalId {
+  id         String        @id @default(cuid())
+  playerId   String?
+  player     Player?       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  providerId String
+  provider   DataProvider  @relation(fields: [providerId], references: [id])
+  externalId String
+  sourceName String?
+  status     MappingStatus
+  confidence Float?
+  candidates Json?
+  createdAt  DateTime      @default(now())
+
+  @@unique([providerId, externalId])
+  @@index([status])
+}
+
+model ProjectionSnapshot {
+  id          String             @id @default(cuid())
+  providerId  String
+  provider    DataProvider       @relation(fields: [providerId], references: [id])
+  season      Int
+  scoring     String
+  capturedAt  DateTime           @default(now())
+  projections PlayerProjection[]
+
+  @@index([season, scoring, capturedAt])
+}
+
+model PlayerProjection {
+  id            String             @id @default(cuid())
+  snapshotId    String
+  snapshot      ProjectionSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  playerId      String
+  player        Player             @relation(fields: [playerId], references: [id])
+  stats         Json
+  fantasyPoints Float
+  floor         Float?
+  ceiling       Float?
+
+  @@unique([snapshotId, playerId])
+}
+
+model ADPSnapshot {
+  id         String       @id @default(cuid())
+  playerId   String
+  player     Player       @relation(fields: [playerId], references: [id])
+  providerId String
+  provider   DataProvider @relation(fields: [providerId], references: [id])
+  sourceId   String?
+  scoring    String
+  leagueType String
+  leagueSize Int?
+  season     Int?
+  mean       Float
+  deviation  Float
+  sampleSize Int?
+  capturedAt DateTime     @default(now())
+
+  @@index([playerId, scoring, capturedAt])
+  @@index([providerId, season, leagueSize, capturedAt])
+}
+
+model RankingSnapshot {
+  id           String       @id @default(cuid())
+  playerId     String
+  player       Player       @relation(fields: [playerId], references: [id])
+  providerId   String
+  provider     DataProvider @relation(fields: [providerId], references: [id])
+  scoring      String
+  rank         Int
+  positionRank Int
+  capturedAt   DateTime     @default(now())
+
+  @@index([playerId, capturedAt])
+}
+
+model Injury {
+  id         String       @id @default(cuid())
+  playerId   String
+  player     Player       @relation(fields: [playerId], references: [id])
+  providerId String
+  provider   DataProvider @relation(fields: [providerId], references: [id])
+  status     String
+  detail     String?
+  capturedAt DateTime     @default(now())
+
+  @@index([playerId, capturedAt])
+}
+
+model OddsEvent {
+  id         String         @id @default(cuid())
+  providerId String
+  provider   DataProvider   @relation(fields: [providerId], references: [id])
+  externalId String
+  name       String
+  startsAt   DateTime?
+  markets    PlayerMarket[]
+  createdAt  DateTime       @default(now())
+
+  @@unique([providerId, externalId])
+}
+
+model PlayerMarket {
+  id         String            @id @default(cuid())
+  eventId    String
+  event      OddsEvent         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  playerId   String
+  player     Player            @relation(fields: [playerId], references: [id])
+  stat       String
+  marketType MarketType
+  lines      SportsbookLine[]
+  consensus  MarketConsensus[]
+
+  @@index([playerId, stat, marketType])
+}
+
+model SportsbookLine {
+  id         String       @id @default(cuid())
+  marketId   String
+  market     PlayerMarket @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  sportsbook String
+  line       Float
+  overPrice  Int
+  underPrice Int
+  source     String
+  capturedAt DateTime     @default(now())
+
+  @@index([marketId, capturedAt])
+}
+
+model MarketConsensus {
+  id           String       @id @default(cuid())
+  marketId     String
+  market       PlayerMarket @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  mean         Float
+  median       Float
+  weighted     Float
+  dispersion   Float
+  bookCount    Int
+  outlierCount Int
+  confidence   Float
+  lineMovement Float?
+  capturedAt   DateTime     @default(now())
+
+  @@index([marketId, capturedAt])
+}
+
+model VegasProjection {
+  id            String   @id @default(cuid())
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id])
+  scoring       String
+  stats         Json
+  fantasyPoints Float
+  capturedAt    DateTime @default(now())
+
+  @@index([playerId, scoring, capturedAt])
+}
+
+model VegasPlayerScore {
+  id         String   @id @default(cuid())
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id])
+  scoring    String
+  score      Float
+  components Json
+  capturedAt DateTime @default(now())
+
+  @@index([playerId, scoring, capturedAt])
+}
+
+model VegasConfidenceScore {
+  id         String   @id @default(cuid())
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id])
+  score      Float
+  breadth    Float
+  agreement  Float
+  freshness  Float
+  keyMarkets Float
+  pricing    Float
+  capturedAt DateTime @default(now())
+
+  @@index([playerId, capturedAt])
+}
+
+model DraftIQScore {
+  id              String   @id @default(cuid())
+  playerId        String
+  player          Player   @relation(fields: [playerId], references: [id])
+  scoring         String
+  overall         Float
+  vegasScore      Float
+  projectionScore Float
+  vorpScore       Float
+  scarcityScore   Float
+  rosterFitScore  Float
+  injuryScore     Float
+  vegasConfidence Float
+  vegasAdp        Float
+  marketAdp       Float
+  vegasEdge       Float
+  components      Json
+  capturedAt      DateTime @default(now())
+
+  @@index([scoring, overall, capturedAt])
+}
+
+model PositionTier {
+  id         String   @id @default(cuid())
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id])
+  scoring    String
+  tier       Int
+  value      Float
+  capturedAt DateTime @default(now())
+
+  @@index([scoring, tier, capturedAt])
+}
+
+model AvailabilityEstimate {
+  id           String   @id @default(cuid())
+  playerId     String
+  player       Player   @relation(fields: [playerId], references: [id])
+  draftId      String?
+  currentPick  Int
+  targetPick   Int
+  probability  Float
+  modelVersion String
+  inputs       Json
+  capturedAt   DateTime @default(now())
+
+  @@index([draftId, currentPick])
+}
+
+model SimulationRun {
+  id          String             @id @default(cuid())
+  draftId     String?
+  draft       Draft?             @relation(fields: [draftId], references: [id], onDelete: SetNull)
+  iterations  Int
+  depth       Int
+  settings    Json
+  status      String
+  results     SimulationResult[]
+  createdAt   DateTime           @default(now())
+  completedAt DateTime?
+}
+
+model SimulationResult {
+  id                    String        @id @default(cuid())
+  runId                 String
+  run                   SimulationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  candidateId           String
+  survivalRate          Float
+  expectedStarterPoints Float
+  expectedVorp          Float
+  expectedVegasEdge     Float
+  composition           Json
+
+  @@unique([runId, candidateId])
+}
+
+model DataProvider {
+  id                  String               @id @default(cuid())
+  name                String
+  category            String
+  enabled             Boolean              @default(true)
+  configuration       Json?
+  externalIds         PlayerExternalId[]
+  projectionSnapshots ProjectionSnapshot[]
+  adpSnapshots        ADPSnapshot[]
+  rankings            RankingSnapshot[]
+  injuries            Injury[]
+  oddsEvents          OddsEvent[]
+  ingestionRuns       DataIngestionRun[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@unique([name, category])
+}
+
+model DataIngestionRun {
+  id             String       @id @default(cuid())
+  providerId     String
+  provider       DataProvider @relation(fields: [providerId], references: [id])
+  status         String
+  calls          Int          @default(0)
+  records        Int          @default(0)
+  failures       Int          @default(0)
+  quotaRemaining Int?
+  quotaResetAt   DateTime?
+  error          String?
+  startedAt      DateTime     @default(now())
+  completedAt    DateTime?
+
+  @@index([providerId, startedAt])
+}
+
+model Manager {
+  id          String         @id @default(cuid())
+  provider    String
+  externalId  String
+  displayName String
+  avatarUrl   String?
+  memberships LeagueMember[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([provider, externalId])
+}
+
+model LeagueMember {
+  id             String   @id @default(cuid())
+  leagueId       String
+  league         League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  managerId      String
+  manager        Manager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  externalTeamId String
+  teamName       String
+  draftSlot      Int?
+  isUser         Boolean  @default(false)
+  tendency       Json?
+  sampleSize     Int      @default(0)
+  confidence     Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([leagueId, managerId])
+  @@index([managerId])
+}
+
+model LeagueSync {
+  id          String    @id @default(cuid())
+  leagueId    String
+  league      League    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  provider    String
+  status      String
+  records     Int       @default(0)
+  error       String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([leagueId, startedAt])
+}
+
+model AppPreference {
+  id             String   @id @default("default")
+  activeLeagueId String?
+  updatedAt      DateTime @updatedAt
+
+  @@index([activeLeagueId])
+}
