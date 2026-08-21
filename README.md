@@ -18,6 +18,15 @@ npm run dev
 
 For Vercel, configure a serverless PostgreSQL `STORAGE_DATABASE_URL` (for example Neon), run `npm run db:deploy` as a controlled release step, and use `npm run vercel-build`. Docker is optional and is not used by the Vercel runtime.
 
+The migration history starts with `20260822000000_baseline`, generated from the authoritative Prisma schema. It creates the complete DraftIQ schema in a new, empty PostgreSQL database. Deploy and verify a new Neon database with:
+
+```bash
+npm run db:deploy
+npm run db:verify
+```
+
+`db:verify` performs a reversible persistence smoke test covering a data-provider upsert, Sleeper league/settings/member persistence, active-league selection, and reload. Run it only after migrations have completed.
+
 ### Vercel environment variables
 
 Configure the following in both **Preview** and **Production** environments:
