@@ -16,14 +16,14 @@ npm run dev
 
 `DEMO_MODE=true` explicitly enables the synthetic dataset. With `DEMO_MODE=false`, DraftIQ never falls back to demo players or markets and instead displays a provider warning when real data is unavailable.
 
-For Vercel, configure a serverless PostgreSQL `STORAGE_URL` (for example Neon), run `npm run db:deploy` as a controlled release step, and use `npm run vercel-build`. Docker is optional and is not used by the Vercel runtime.
+For Vercel, configure a serverless PostgreSQL `STORAGE_DATABASE_URL` (for example Neon), run `npm run db:deploy` as a controlled release step, and use `npm run vercel-build`. Docker is optional and is not used by the Vercel runtime.
 
 ### Vercel environment variables
 
 Configure the following in both **Preview** and **Production** environments:
 
 - `DEMO_MODE=false`
-- `STORAGE_URL=` — authoritative pooled serverless PostgreSQL URL (Neon is supported)
+- `STORAGE_DATABASE_URL=` — authoritative pooled serverless PostgreSQL URL (Neon is supported)
 - `SESSION_SECRET=` — at least 32 random characters
 
 Optional provider credentials are `FANTASYPROS_API_KEY` and `SPORTS_GAME_ODDS_API_KEY`. Sleeper and Fantasy Football Calculator do not require credentials. Missing optional credentials reduce model confidence and appear as `NOT CONFIGURED`; they do not prevent league import. Never put provider credentials in variables exposed with a `NEXT_PUBLIC_` prefix.
