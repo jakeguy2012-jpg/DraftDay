@@ -1,0 +1,8 @@
+import "./globals.css";
+import Link from "next/link";
+import {isDemoMode} from "@/lib/runtime";
+import {getActiveLeague} from "@/server/active-league";
+export const metadata={title:"DraftIQ — Vegas-First Draft Intelligence",description:"Find fantasy draft mispricing using sportsbook expectations."};
+export const dynamic="force-dynamic";
+const nav=[["/","Dashboard"],["/leagues","My Leagues"],["/draft-room","Live Draft Room"],["/opponent-intel","Opponent Intel"],["/vegas-board","Vegas Board"],["/rankings","Rankings"],["/planner","Draft Planner"],["/simulator","Simulator"],["/data-sources","Data Sources"],["/settings","Settings"],["/admin/mapping","Player Mapping"]];
+export default async function Layout({children}:{children:React.ReactNode}){const demo=isDemoMode();let active:any;try{active=await getActiveLeague()}catch{}const rules=active?.settings?.scoring,format=rules?.reception===1?"PPR":rules?.reception===.5?"Half PPR":rules?"Standard":"";return <html lang="en"><body><aside><div className="brand"><span>DIQ</span><div>Draft<b>IQ</b><small>VEGAS-FIRST INTELLIGENCE</small></div></div>{active?<Link href="/leagues" className="active-league"><small>ACTIVE LEAGUE</small><b>{active.name}</b><span>{active.settings.teams} Teams · {format} · {active.settings.draftType}</span><span>Draft Slot {active.settings.draftSlot}</span></Link>:<Link href="/leagues" className="active-league warning"><small>ACTIVE LEAGUE</small><b>Not selected</b><span>Connect a league</span></Link>}<nav>{nav.map(([href,label])=><Link key={href} href={href}>{label}</Link>)}</nav><div className="source"><i/> {demo?"DEMO DATA":"REAL DATA"}<small>{demo?"Synthetic markets · clearly labeled":"Provider-backed · no demo fallback"}</small></div></aside><main>{children}</main></body></html>}

@@ -1,0 +1,4 @@
+import {NextResponse} from "next/server";import {z} from "zod";import {clearActiveLeague,getActiveLeague,setActiveLeague} from "@/server/active-league";
+export async function GET(){try{return NextResponse.json({data:await getActiveLeague()})}catch(error){return NextResponse.json({data:null,error:error instanceof Error?error.message:"Active league unavailable"},{status:503})}}
+export async function POST(request:Request){try{const {leagueId}=z.object({leagueId:z.string().min(1)}).parse(await request.json());return NextResponse.json({data:await setActiveLeague(leagueId)})}catch(error){return NextResponse.json({error:error instanceof Error?error.message:"Unable to set active league"},{status:400})}}
+export async function DELETE(){try{await clearActiveLeague();return NextResponse.json({data:null})}catch(error){return NextResponse.json({error:error instanceof Error?error.message:"Unable to clear active league"},{status:400})}}

@@ -1,0 +1,6 @@
+export type Position = "QB" | "RB" | "WR" | "TE" | "K" | "DST";
+export type StatLine = Partial<Record<"passingYards"|"passingTouchdowns"|"interceptions"|"rushingAttempts"|"rushingYards"|"rushingTouchdowns"|"receptions"|"receivingYards"|"receivingTouchdowns"|"firstDowns", number>>;
+export interface ScoringRules { passingYard:number; passingTouchdown:number; interception:number; rushingYard:number; rushingTouchdown:number; reception:number; receivingYard:number; receivingTouchdown:number; firstDown:number; tePremium:number }
+export interface DataProvenance {source:string;updatedAt:Date|string|null;status:"AVAILABLE"|"STALE"|"NOT_CONFIGURED"|"NO_COVERAGE"}
+export interface PlayerValue { id:string; name:string; position:Position; team:string; marketAdp:number; adpSd:number; vegasAdp:number; vegasPoints:number; fantasyPoints:number; vegasScore:number; confidence:number; vorp:number; tier:number; draftIq:number; receptions?:number; receivingYards?:number; provenance?:{adp:DataProvenance;projection:DataProvenance;vegas:DataProvenance} }
+export const PPR_SCORING: ScoringRules = { passingYard:.04,passingTouchdown:4,interception:-2,rushingYard:.1,rushingTouchdown:6,reception:1,receivingYard:.1,receivingTouchdown:6,firstDown:0,tePremium:0 };
